@@ -22,29 +22,9 @@ class Square extends React.Component {
  * Componente de tabuleiro
  */
 class Board extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            squares: Array(9).fill(null),
-            xIsNext: true,
-        };
-    }
-
-    handleClick(i) {
-        const squares = this.state.squares.slice();
-
-        // se ja tem vencedor, ou a casa esta ocupada, nao faz nada
-        if (calculateWinner(squares) || squares[i]) {
-            return;
-        }
-
-        squares[i] = this.state.xIsNext ? 'X' : 'O';
-        // atualizando estado, é bom usar o set state
-        this.setState({
-            squares: squares,
-            xIsNext: !this.state.xIsNext,
-        });
-    }
+    // constructor(props) {
+    //     super(props);
+    // }
 
     renderSquare(i) {
         return (
@@ -52,30 +32,17 @@ class Board extends React.Component {
             // Repara que na chamada de um componente, é passado alguns valores
             // (value e on click. Isso é o props no componente a ser renderizado)
             <Square
-                value={this.state.squares[i]}
-                onClick={() => this.handleClick(i)}
+                value={this.props.squares[i]}
+                onClick={() => this.props.onClick(i)}
             />
         );
     }
 
     render() {
 
-        // calcula se tem vencedor
-        const winner = calculateWinner(this.state.squares);
-        let status;
-
-        // tem vencedor
-        if (winner) {
-            status = 'Winner: ' + winner;
-
-        // não tem vencedor
-        } else {
-            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
-        }
-
         return (
             <div>
-                <div className="status">{status}</div>
+                <div className="status">{this.props.status}</div>
                 <div className="board-row">
                     {this.renderSquare(0)}{this.renderSquare(1)}{this.renderSquare(2)}
                 </div>
@@ -95,15 +62,85 @@ class Board extends React.Component {
  * Toda a view que será renderizada
  */
 class Game extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            history: [{
+                squares: Array(9).fill(null),
+            }],
+            xIsNext: true,
+            stepNumber: 0,
+        };
+    }
+
+    jumpTo(step) {
+        this.setState({
+            stepNumber: step,
+            xIsNext: (step % 2) === 0,
+        });
+    }
+
+    handleClick(i) {
+        // afim de descartar os furturos passos 
+        const history = this.state.history.slice(0, this.state.stepNumber + 1);
+
+        const current = history[history.length - 1];
+        const squares = current.squares.slice();
+
+        // se ja tem vencedor, ou a casa esta ocupada, nao faz nada
+        if (calculateWinner(squares) || squares[i]) {
+            return;
+        }
+        squares[i] = this.state.xIsNext ? 'X' : 'O';
+
+        // atualizando estado, é bom usar o set state
+        this.setState({
+            history: history.concat([{
+                squares: squares,
+            }]),
+            xIsNext: !this.state.xIsNext,
+            stepNumber: history.length,
+        });
+    }
+
     render() {
+        const history = this.state.history;
+        const current = history[this.state.stepNumber];
+        const winner = calculateWinner(current.squares);
+
+        const moves = history.map((step, move) => {
+            const desc = move ?
+                'Go to move #' + move :
+                'Go to game start';
+            return (
+                // é importante setar uma key para o react identificar cada elemento da lista e poder re-renderizar so o necesessario
+                // por default ele usa o index no array, mas pra efeito de sort(), isso pode causar um problema
+                // entao é uma boa prática explicitar
+                <li key={move}>
+                    <button onClick={() => this.jumpTo(move)}>{desc}</button>
+                </li>
+            );
+        });
+
+        let status;
+        if (winner) {
+            status = 'Winner: ' + winner;
+        } else {
+            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+        }
+
         return (
             <div className="game">
                 <div className="game-board">
-                    <Board />
+                    <Board
+                        squares={current.squares}
+                        onClick={(i) => this.handleClick(i)}
+                    />
                 </div>
                 <div className="game-info">
-                    <div>{/* status */}</div>
-                    <ol>{/* TODO */}</ol>
+                    <div>{status}</div>
+                    <ol>{moves}</ol>
                 </div>
             </div>
         );
