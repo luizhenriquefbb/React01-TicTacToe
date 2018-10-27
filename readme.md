@@ -2,7 +2,7 @@
 
 Este repositório contém os primeiros passos para se aprender react.
 
-Conforme o site oficial do react, vamos desenvolver um jogo da velha do zero para aprender o básico.
+Conforme o site oficial do react, vamos desenvolver um *jogo da velha* do zero para aprender o básico.
 
 ## instalando tudo
 
